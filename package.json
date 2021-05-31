@@ -1,0 +1,42 @@
+{
+  "name": "robo-g-node",
+  "version": "1.0.0",
+  "description": "Node Server for Robo-G, Access me from anywhere",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "sudo pm2 start app.js",
+    "stop": "sudo pm2 stop app.js",
+    "restart": "pm2 restart server",
+    "show": "pm2 show server",
+    "logs": "pm2 logs server",
+    "monitor": "pm2 monit",
+    "status": "pm2 status"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kamleshkumarverma1986/robo-g-node.git"
+  },
+  "keywords": [
+    "ROBOT",
+    "IoT"
+  ],
+  "author": "kamlesh kumar verma",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kamleshkumarverma1986/robo-g-node/issues"
+  },
+  "homepage": "https://github.com/kamleshkumarverma1986/robo-g-node#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cookie-parser": "^1.4.5",
+    "express": "^4.17.1",
+    "mongoose": "^5.12.8",
+    "pm2": "^4.5.6",
+    "query-types": "^0.1.4",
+    "socket.io": "^4.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
