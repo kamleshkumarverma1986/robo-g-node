@@ -87,7 +87,7 @@ io.on('connection', function(socket) {
   // listening to client on any movement
   socket.on('movement',  ({movement}) => {
     console.log("movement: ", movement);
-    socket.broadcast.emit('movement', {movement});
+    socket.broadcast.emit('movement', movement);
   });
 
   // Whenever someone disconnects this piece of code executed
