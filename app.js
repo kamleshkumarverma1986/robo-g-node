@@ -58,18 +58,34 @@ app.get('/', (request, response) => {
 /* RESTFUL API */
 app.use(pathURI, routes);
 
-/* All connected NodeMCU/clients with socket */
+/* All connected NodeMCU / Front-end clients with socket */
 const allConnectedNodeMCU = {};
-const allConnectedFeClient = {};
+const allConnectedClientFE = {};
+
+
+const disconnectClient = (socket) => {
+  const client = allConnectedClientFE[socket.id];
+  if (client) {
+    const associatedNodeMCU = client.associatedNodeMCU;
+    if (associatedNodeMCU) {
+      associatedNodeMCU.isOccupy = false;
+    }
+    delete allConnectedClientFE[socket.id];
+  }
+}
+
+const disconnectNodeMCU = (socket) => {
+  delete allConnectedNodeMCU[socket.id];
+}
 
 /* [Socket.io] */
 io.on("connection", (socket) => {
 
-  /* Just informing to connected NodeMCU/clients that you are connected */
+  /* Just informing to connected NodeMCU/FE clients that you are connected */
   socket.emit("socket-connection-established", "You are connected with SERVER");
 
   /* Register the NodeMCU */
-  socket.on("REGISTER-ESP8266", ({macAddress}) => {
+  socket.on("REGISTER-NODE-MCU", ({macAddress}) => {
     allConnectedNodeMCU[macAddress] = {
       socketId: socket.id,
       isOccupy: false
@@ -77,7 +93,7 @@ io.on("connection", (socket) => {
   });
 
   /* Register the Front-end Client */
-  socket.on("REGISTER-FE-CLIENT", ({ NodeMCU_MacAddress}, callback) => {
+  socket.on("REGISTER-FRONT-END-CLIENT", ({ NodeMCU_MacAddress}, callback) => {
     if (!allConnectedNodeMCU[NodeMCU_MacAddress]) {
       callback({
         error: true,
@@ -86,11 +102,11 @@ io.on("connection", (socket) => {
     } else if (allConnectedNodeMCU[NodeMCU_MacAddress] && allConnectedNodeMCU[NodeMCU_MacAddress].isOccupy) {
       callback({
         error: true,
-        message: `The Robo-G already connected by someone`
+        message: `This Robo-G already connected by someone`
       });
     } else {
       const nodeMCU = allConnectedNodeMCU[NodeMCU_MacAddress];
-      allConnectedFeClient[socket.id] = { associatedNodeMCU: nodeMCU }
+      allConnectedClientFE[socket.id] = { associatedNodeMCU: nodeMCU }
       nodeMCU.isOccupy = true;
       callback({ error: false });
     }
@@ -98,21 +114,15 @@ io.on("connection", (socket) => {
 
   socket.on("movement",  ({movement}) => {
     console.log("movement: ", movement);
-    const associatedNodeMCU = allConnectedFeClient[socket.id].associatedNodeMCU;
+    const associatedNodeMCU = allConnectedClientFE[socket.id].associatedNodeMCU;
     if (associatedNodeMCU) {
       socket.to(associatedNodeMCU.socketId).emit("movement", movement);
     }
   });
 
   socket.on('disconnect', () => {
-    const client = allConnectedFeClient[socket.id];
-    if (client) {
-      const associatedNodeMCU = client.associatedNodeMCU;
-      if (associatedNodeMCU) {
-        associatedNodeMCU.isOccupy = false;
-      }
-      delete allConnectedFeClient[socket.id];
-    }
+    disconnectClient(socket);
+    disconnectNodeMCU(socket);
   });
 
 });
