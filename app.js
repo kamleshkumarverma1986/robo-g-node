@@ -100,7 +100,7 @@ io.on("connection", (socket) => {
     console.log("movement: ", movement);
     const associatedNodeMCU = allConnectedFeClient[socket.id].associatedNodeMCU;
     if (associatedNodeMCU) {
-      socket.to(associatedNodeMCU.socketId).emit("movement", socket.id, movement);
+      socket.to(associatedNodeMCU.socketId).emit("movement", movement);
     }
   });
 
