@@ -65,6 +65,9 @@ const allConnectedFeClient = {};
 /* [Socket.io] */
 io.on("connection", (socket) => {
 
+  /* Just informing to connected NodeMCU/clients that you are connected */
+  socket.emit("socket-connection-established", "You are connected with SERVER");
+
   /* Register the NodeMCU */
   socket.on("REGISTER-ESP8266", ({macAddress}) => {
     allConnectedNodeMCU[macAddress] = {
@@ -74,25 +77,23 @@ io.on("connection", (socket) => {
   });
 
   /* Register the Front-end Client */
-  socket.on("REGISTER-FE-CLIENT", ({NodeMCU_MacAddress, callback}) => {
+  socket.on("REGISTER-FE-CLIENT", ({ NodeMCU_MacAddress}, callback) => {
     if (!allConnectedNodeMCU[NodeMCU_MacAddress]) {
       callback({
         error: true,
         message: `Don't present any Robot-G associated with ${NodeMCU_MacAddress} MAC address. Please try again.`
       });
-      return null;
-    }
-    if (allConnectedNodeMCU[NodeMCU_MacAddress] && allConnectedNodeMCU[NodeMCU_MacAddress].isOccupy) {
+    } else if (allConnectedNodeMCU[NodeMCU_MacAddress] && allConnectedNodeMCU[NodeMCU_MacAddress].isOccupy) {
       callback({
         error: true,
         message: `The Robo-G already connected by someone`
       });
-      return null;
+    } else {
+      const nodeMCU = allConnectedNodeMCU[NodeMCU_MacAddress];
+      allConnectedFeClient[socket.id] = { associatedNodeMCU: nodeMCU }
+      nodeMCU.isOccupy = true;
+      callback({ error: false });
     }
-    const nodeMCU = allConnectedNodeMCU[NodeMCU_MacAddress];
-    allConnectedFeClient[socket.id] = { associatedNodeMCU: nodeMCU }
-    nodeMCU.isOccupy = true;
-    callback({ error: false });
   });
 
   socket.on("movement",  ({movement}) => {
@@ -104,11 +105,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on('disconnect', () => {
-    const associatedNodeMCU = allConnectedFeClient[socket.id].associatedNodeMCU;
-    if (associatedNodeMCU) {
-      associatedNodeMCU.isOccupy = false;
+    const client = allConnectedFeClient[socket.id];
+    if (client) {
+      const associatedNodeMCU = client.associatedNodeMCU;
+      if (associatedNodeMCU) {
+        associatedNodeMCU.isOccupy = false;
+      }
+      delete allConnectedFeClient[socket.id];
     }
-    delete allConnectedFeClient[socket.id];
   });
 
 });
