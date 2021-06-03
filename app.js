@@ -22,11 +22,9 @@ const io  = require('socket.io')(http, {
 
 const path = require('path');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const queryType = require('query-types');
 const routes = require('./routes/index');
-const dbConfig = require('./config/datasource');
 
 /* Application Configuration */
 (function applicationConfiguration(app) {
@@ -42,7 +40,6 @@ const dbConfig = require('./config/datasource');
       next();
     }
   });
-
   app.disable('x-powered-by');
   app.use(bodyParser.json({limit: "50mb"}));
   app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
@@ -52,22 +49,8 @@ const dbConfig = require('./config/datasource');
   app.use(queryType.middleware()); /* This will convert all string type to integer for query parameters */
 }(app));
 
-/* Database configuration */
-/*
-(function databaseConnection(app) {
-  app.set('dbUrl', dbConfig.db[app.get('env')]);
-  mongoose.Promise = global.Promise;
-  mongoose.connect(app.get('dbUrl'));
-  const db = mongoose.connection;
-  db.on('error', console.error.bind(console, 'database connection error:'));
-  db.once('open', function() {
-    console.log("we're connected with database!");
-  });
-}(app));
-*/
-
 /* Serve the HTML page on root */
-app.get('/', function (request, response) {
+app.get('/', (request, response) => {
   response.write("Hello World, I am Robo-G Version 1.0");
   response.end();
 });
@@ -75,23 +58,26 @@ app.get('/', function (request, response) {
 /* RESTFUL API */
 app.use(pathURI, routes);
 
-/* [Socket.io] */
-io.on('connection', function(socket) {
-  console.log('A user connected');
+/* Socket connected clients */
+const allSocketConnectedNodeMCU = {};
 
-  // throwing to client
-  socket.emit('connected', {
-    greeting: "hello, you are connected with the server"
+/* [Socket.io] */
+io.on("connection", (socket) => {
+
+  socket.on("REGISTER-ESP8266", ({macAddress}) => {
+    allSocketConnectedNodeMCU[macAddress] = socket;
   });
 
+  console.log("this is the allSocketConnectedNodeMCU ", allSocketConnectedNodeMCU);
+
   // listening to client on any movement
-  socket.on('movement',  ({movement}) => {
+  socket.on("movement",  ({movement}) => {
     console.log("movement: ", movement);
-    socket.broadcast.emit('movement', movement);
+    socket.broadcast.emit("movement", movement);
   });
 
   // Whenever someone disconnects this piece of code executed
-  socket.on('disconnect', function () {
+  socket.on('disconnect', () => {
      console.log('A user disconnected');
   });
 
@@ -100,7 +86,7 @@ io.on('connection', function(socket) {
 });
 
 /* Starting the SERVER */
-http.listen(3600, function() {
+http.listen(3600, () => {
   console.log("Now server is running on port 3600!");
 });
 
