@@ -58,30 +58,58 @@ app.get('/', (request, response) => {
 /* RESTFUL API */
 app.use(pathURI, routes);
 
-/* Socket connected clients */
-const allSocketConnectedNodeMCU = {};
+/* All connected NodeMCU/clients with socket */
+const allConnectedNodeMCU = {};
+const allConnectedFeClient = {};
 
 /* [Socket.io] */
 io.on("connection", (socket) => {
 
+  /* Register the NodeMCU */
   socket.on("REGISTER-ESP8266", ({macAddress}) => {
-    allSocketConnectedNodeMCU[macAddress] = socket;
+    allConnectedNodeMCU[macAddress] = {
+      socketId: socket.id,
+      isOccupy: false
+    }
   });
 
-  console.log("this is the allSocketConnectedNodeMCU ", allSocketConnectedNodeMCU);
+  /* Register the Front-end Client */
+  socket.on("REGISTER-FE-CLIENT", ({NodeMCU_MacAddress, callback}) => {
+    if (!allConnectedNodeMCU[NodeMCU_MacAddress]) {
+      callback({
+        error: true,
+        message: `Don't present any Robot-G associated with ${NodeMCU_MacAddress} MAC address. Please try again.`
+      });
+      return null;
+    }
+    if (allConnectedNodeMCU[NodeMCU_MacAddress] && allConnectedNodeMCU[NodeMCU_MacAddress].isOccupy) {
+      callback({
+        error: true,
+        message: `The Robo-G already connected by someone`
+      });
+      return null;
+    }
+    const nodeMCU = allConnectedNodeMCU[NodeMCU_MacAddress];
+    allConnectedFeClient[socket.id] = { associatedNodeMCU: nodeMCU }
+    nodeMCU.isOccupy = true;
+    callback({ error: false });
+  });
 
-  // listening to client on any movement
   socket.on("movement",  ({movement}) => {
     console.log("movement: ", movement);
-    socket.broadcast.emit("movement", movement);
+    const associatedNodeMCU = allConnectedFeClient[socket.id].associatedNodeMCU;
+    if (associatedNodeMCU) {
+      socket.to(associatedNodeMCU.socketId).emit("movement", socket.id, movement);
+    }
   });
 
-  // Whenever someone disconnects this piece of code executed
   socket.on('disconnect', () => {
-     console.log('A user disconnected');
+    const associatedNodeMCU = allConnectedFeClient[socket.id].associatedNodeMCU;
+    if (associatedNodeMCU) {
+      associatedNodeMCU.isOccupy = false;
+    }
+    delete allConnectedFeClient[socket.id];
   });
-
-  //console.log("this is the socket.handshak: ",socket.handshake.query["name"]);
 
 });
 
@@ -89,6 +117,3 @@ io.on("connection", (socket) => {
 http.listen(3600, () => {
   console.log("Now server is running on port 3600!");
 });
-
-
-
