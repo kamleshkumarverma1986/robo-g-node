@@ -70,11 +70,14 @@ const disconnectClient = (socket) => {
     if (associatedNodeMCU) {
       associatedNodeMCU.isOccupy = false;
     }
+    console.log("disconnected client name: ", client.clientName);
     delete allConnectedClientFE[socket.id];
   }
 }
 
 const disconnectNodeMCU = (socket) => {
+  const client = allConnectedNodeMCU[socket.id];
+  console.log("disconnected client name: ", client?.clientName);
   delete allConnectedNodeMCU[socket.id];
 }
 
@@ -85,15 +88,17 @@ io.on("connection", (socket) => {
   socket.emit("socket-connection-established", "You are connected with SERVER");
 
   /* Register the NodeMCU */
-  socket.on("REGISTER-NODE-MCU", ({macAddress}) => {
+  socket.on("REGISTER-NODE-MCU", ({macAddress, clientName}) => {
+    console.log("Registered client name: ", clientName);
     allConnectedNodeMCU[macAddress] = {
       socketId: socket.id,
-      isOccupy: false
+      isOccupy: false,
+      clientName
     }
   });
 
   /* Register the Front-end Client */
-  socket.on("REGISTER-FRONT-END-CLIENT", ({ NodeMCU_MacAddress}, callback) => {
+  socket.on("REGISTER-FRONT-END-CLIENT", ({ NodeMCU_MacAddress, clientName }, callback) => {
     if (!allConnectedNodeMCU[NodeMCU_MacAddress]) {
       callback({
         error: true,
@@ -105,8 +110,9 @@ io.on("connection", (socket) => {
         message: `This Robo-G already connected by someone`
       });
     } else {
+      console.log("Registered client name: ", clientName);
       const nodeMCU = allConnectedNodeMCU[NodeMCU_MacAddress];
-      allConnectedClientFE[socket.id] = { associatedNodeMCU: nodeMCU }
+      allConnectedClientFE[socket.id] = { associatedNodeMCU: nodeMCU, clientName }
       nodeMCU.isOccupy = true;
       callback({ error: false });
     }
@@ -131,3 +137,4 @@ io.on("connection", (socket) => {
 http.listen(3600, () => {
   console.log("Now server is running on port 3600!");
 });
+
