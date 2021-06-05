@@ -130,9 +130,14 @@ io.on("connection", (socket) => {
 
   socket.on("movement",  ({movement}) => {
     console.log("movement: ", movement);
-    const associatedNodeMCU = allConnectedClientFE[socket.id].associatedNodeMCU;
-    if (associatedNodeMCU) {
-      socket.to(associatedNodeMCU.socketId).emit("movement", movement);
+    const client = allConnectedClientFE[socket.id];
+    if (client) {
+      const associatedNodeMCU = client.associatedNodeMCU;
+      if (associatedNodeMCU) {
+        socket.to(associatedNodeMCU.socketId).emit("movement", movement);
+      }
+    } else {
+      socket.disconnect(true);
     }
   });
 
