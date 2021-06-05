@@ -70,15 +70,19 @@ const disconnectClient = (socket) => {
     if (associatedNodeMCU) {
       associatedNodeMCU.isOccupy = false;
     }
-    console.log("disconnected client name: ", client.clientName);
+    const { clientName } = client;
     delete allConnectedClientFE[socket.id];
+    console.log("disconnected client name: ", clientName);
   }
 }
 
 const disconnectNodeMCU = (socket) => {
   const client = allConnectedNodeMCU[socket.id];
-  console.log("disconnected client name: ", client?.clientName);
-  delete allConnectedNodeMCU[socket.id];
+  if (client) {
+    const clientName = client.clientName;
+    delete allConnectedNodeMCU[socket.id];
+    console.log("disconnected client name: ", clientName);
+  }
 }
 
 /* [Socket.io] */
@@ -90,10 +94,16 @@ io.on("connection", (socket) => {
   /* Register the NodeMCU */
   socket.on("REGISTER-NODE-MCU", ({macAddress, clientName}) => {
     console.log("Registered client name: ", clientName);
-    allConnectedNodeMCU[macAddress] = {
-      socketId: socket.id,
-      isOccupy: false,
-      clientName
+    if (allConnectedNodeMCU[macAddress]) {
+      // if NodeMCU is disconnected in between
+      allConnectedNodeMCU[macAddress].socketId = socket.id;
+      allConnectedNodeMCU[macAddress].isOccupy = Object.keys(allConnectedClientFE).some(socketId => allConnectedClientFE[socketId].associatedNodeMCU.clientName === clientName);
+    } else {
+      allConnectedNodeMCU[macAddress] = {
+        socketId: socket.id,
+        isOccupy: false,
+        clientName
+      }
     }
   });
 
