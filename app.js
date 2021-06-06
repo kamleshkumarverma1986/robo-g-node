@@ -62,12 +62,12 @@ app.use(pathURI, routes);
 const allConnectedNodeMCU = {};
 const allConnectedClientFE = {};
 
-
 const disconnectClient = (socket) => {
   const client = allConnectedClientFE[socket.id];
   if (client) {
     const associatedNodeMCU = client.associatedNodeMCU;
     if (associatedNodeMCU) {
+      socket.to(associatedNodeMCU.socketId).emit("movement", "stop-all-movement");
       associatedNodeMCU.isOccupy = false;
     }
     const { clientName } = client;
