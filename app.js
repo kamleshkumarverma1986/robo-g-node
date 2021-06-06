@@ -64,7 +64,6 @@ const allConnectedClientFE = {};
 
 const disconnectClient = (socket) => {
   const client = allConnectedClientFE[socket.id];
-  console.log("this is teh temp ", socket.id);
   if (client) {
     const associatedNodeMCU = client.associatedNodeMCU;
     if (associatedNodeMCU) {
