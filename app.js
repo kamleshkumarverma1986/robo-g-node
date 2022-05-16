@@ -149,7 +149,7 @@ io.on("connection", (socket) => {
 });
 
 /* Starting the SERVER */
-http.listen(3600, () => {
+http.listen(80, () => {
   console.log("Now server is running on port 3600!");
 });
 
