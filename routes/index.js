@@ -18,18 +18,6 @@ router.use((request, response, next) => {
     next();
 });
 
-/* USER Subscribe */
-router.route('/user/subscribe')
-    .post((request, response) => {
-        userController.subscribe(request)
-            .then( success => {
-                response.status(success.statusCode).send(success);
-            }).catch( error => {
-                console.log("this is the error ", error);
-                response.status(error.statusCode).send();
-            });
-    });
-
 /* Connect Robo-G */
 router.route('/connect-robo-g')
     .get((request, response) => {
