@@ -2,9 +2,9 @@
  * Created by kaverma on 26-May-2021.
  * 
  *  APIs Detail:
- *  - http://localhost:3600/ = Host the HTML page.
- *  - http://localhost:3600/api/v1/robo-g-connect/socket.io = Socket IO.
- *  - http://localhost:3600/api/v1/{URI} = RESTFUL API.
+ *  - http://localhost/ = Host the HTML page.
+ *  - http://localhost/api/v1/robo-g-connect/socket.io = Socket IO.
+ *  - http://localhost/api/v1/{URI} = RESTFUL API. [PENDING]
  * 
  */
 
@@ -51,7 +51,7 @@ const routes = require('./routes/index');
 
 /* Serve the HTML page on root */
 app.get('/', (request, response) => {
-  response.write("Hello World, I am Robo-G Version 1.0");
+  response.write("Hello World, I am Robo-G Version 2.0");
   response.end();
 });
 
@@ -66,6 +66,7 @@ const disconnectClient = (socket) => {
   const client = allConnectedClientFE[socket.id];
   if (client) {
     const associatedNodeMCU = client.associatedNodeMCU;
+    console.log("associatedNodeMCU ", associatedNodeMCU);
     if (associatedNodeMCU) {
       socket.to(associatedNodeMCU.socketId).emit("movement", "stop-all-movement");
       associatedNodeMCU.isOccupy = false;
@@ -109,19 +110,19 @@ io.on("connection", (socket) => {
 
   /* Register the Front-end Client */
   socket.on("REGISTER-FRONT-END-CLIENT", ({ NodeMCU_MacAddress, clientName }, callback) => {
-    if (!allConnectedNodeMCU[NodeMCU_MacAddress]) {
+    const nodeMCU = allConnectedNodeMCU[NodeMCU_MacAddress];
+    if (!nodeMCU) {
       callback({
         error: true,
         message: `Don't present any Robot-G associated with ${NodeMCU_MacAddress} MAC address. Please try again.`
       });
-    } else if (allConnectedNodeMCU[NodeMCU_MacAddress] && allConnectedNodeMCU[NodeMCU_MacAddress].isOccupy) {
+    } else if (nodeMCU && nodeMCU.isOccupy) {
       callback({
         error: true,
         message: `This Robo-G already connected by someone`
       });
     } else {
       console.log("Registered client name: ", clientName);
-      const nodeMCU = allConnectedNodeMCU[NodeMCU_MacAddress];
       allConnectedClientFE[socket.id] = { associatedNodeMCU: nodeMCU, clientName }
       nodeMCU.isOccupy = true;
       callback({ error: false });
