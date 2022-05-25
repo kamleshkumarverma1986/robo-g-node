@@ -142,6 +142,16 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on('jpgstream_server', (msg) => {
+    console.log("jpgstream_server on");
+    io.to('webusers').emit('jpgstream_client', msg);
+  });
+
+  socket.on('webuser', (msg) => {
+      console.log("webuser on");
+      socket.join('webusers');
+  });
+
   socket.on('disconnect', () => {
     disconnectClient(socket);
     disconnectNodeMCU(socket);
