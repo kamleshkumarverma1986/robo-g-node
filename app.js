@@ -135,12 +135,13 @@ io.on("connection", (socket) => {
           error: true,
           message: `Don't present any Robot-G associated with ${NodeMCU_MacAddress} MAC address. Please try again.`,
         });
-      } else if (nodeMCU && nodeMCU.isOccupy) {
-        callback({
-          error: true,
-          message: `This Robo-G already connected by someone`,
-        });
       } else {
+        // else if (nodeMCU && nodeMCU.isOccupy) {
+        //   callback({
+        //     error: true,
+        //     message: `This Robo-G already connected by someone`,
+        //   });
+        // }
         console.log("Registered client name: ", clientName);
         allConnectedClientFE[socket.id] = {
           associatedNodeMCU: nodeMCU,
